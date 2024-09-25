@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="Style.css">
+    <title>Book Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .form-group { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<h1>Book Management</h1>
+
+<div class="form-group">
+    <input type="text" id="bookTitle" placeholder="Book Title" required>
+    <input type="text" id="bookAuthor" placeholder="Author" required>
+    <input type="text" id="bookGenre" placeholder="Genre" required>
+    <button onclick="createBook()">Create Book</button>
+</div>
+
+<h2>Book List</h2>
+<table id="bookTable">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Genre</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+
+<script>
+    const apiUrl = 'http://localhost:8080/books';
+
+    async function fetchBooks() {
+        const response = await fetch(apiUrl);
+        const books = await response.json();
+        const tbody = document.querySelector('#bookTable tbody');
+        tbody.innerHTML = '';
+        books.forEach(book => {
+            const row = `<tr>
+                <td>${book.id}</td>
+                <td>${book.title}</td>
+                <td>${book.author}</td>
+                <td>${book.genre}</td>
+                <td>
+                    <button onclick="editBook(${book.id}, '${book.title}', '${book.author}', '${book.genre}')">Edit</button>
+                    <button onclick="deleteBook(${book.id})">Delete</button>
+                </td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    async function createBook() {
+        const title = document.getElementById('bookTitle').value;
+        const author = document.getElementById('bookAuthor').value;
+        const genre = document.getElementById('bookGenre').value;
+
+        const response = await fetch(apiUrl + '/createbook', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, author, genre })
+        });
+
+        if (response.ok) {
+            document.getElementById('bookTitle').value = '';
+            document.getElementById('bookAuthor').value = '';
+            document.getElementById('bookGenre').value = '';
+            fetchBooks();
+        } else {
+            alert('Error creating book');
+        }
+    }
+
+    async function editBook(id, title, author, genre) {
+        const newTitle = prompt('Update Title:', title);
+        const newAuthor = prompt('Update Author:', author);
+        const newGenre = prompt('Update Genre:', genre);
+
+        if (newTitle && newAuthor && newGenre) {
+            const response = await fetch(apiUrl + '/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: newTitle, author: newAuthor, genre: newGenre })
+            });
+
+            if (response.ok) {
+                fetchBooks();
+            } else {
+                alert('Error updating book');
+            }
+        }
+    }
+
+    async function deleteBook(id) {
+        const response = await fetch(apiUrl + '/' + id, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            fetchBooks();
+        } else {
+            alert('Error deleting book');
+        }
+    }
+
+    // Initial fetch of books
+    fetchBooks();
+</script>
+
+</body>
+</html>
